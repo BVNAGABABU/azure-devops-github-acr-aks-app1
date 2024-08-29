@@ -38,8 +38,8 @@ stages:
         tags: |
           $(tag)
     
-    - bash: echo "Contents in system default working directory; ls -R $(System.DefaultWorkingDirectory)"
-    - bash: echo "Before copying contents in Build Artifact Directory; ls -R $(Build.ArtifactStagingDirectory)"
+    - bash: echo Contents in system default working directory; ls -R $(System.DefaultWorkingDirectory)
+    - bash: echo Before copying contents in Build Artifact Directory; ls -R $(Build.ArtifactStagingDirectory)
     
     # Copy kubernetes manifest files from source directory to artifact staging directory
     - task: CopyFiles@2
@@ -48,6 +48,7 @@ stages:
         Contents: '**'
         TargetFolder: '$(Build.ArtifactStagingDirectory)'
         OverWrite: true
+    - bash: echo After copying to build artifact directory; ls -R $(Build.ArtifactStagingDirectory)
     
     # Publish build artifacts to azure pipelines
     - task: PublishBuildArtifacts@1
