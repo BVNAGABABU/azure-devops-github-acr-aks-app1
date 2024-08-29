@@ -1,0 +1,53 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+variables:
+  tag: '$(Build.BuildId)'
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+- stage: Build
+  displayName: Build stage
+  jobs:
+  - job: Build
+    displayName: Build docker images
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    # Task-1: Build docker image and push to azure container registry
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'aksdemoacr'
+        repository: 'custom-nginx-image'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
+        tags: |
+          $(tag)
+          $(Build.SourceVersion)
+    
+    - bash: echo Contents in system default working directory; ls -R $(System.DefaultWorkingDirectory)
+    - bash: echo Before copying contents in Build Artifact Directory; ls -R $(Build.ArtifactStagingDirectory)
+    
+    # Task-2: Copy kubernetes manifest files to Build artifact staging directory
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: '$(System.DefaultWorkingDirectory)/kube-manifests'
+        Contents: '**'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+        OverWrite: true
+      
+    - bash: echo After copying to build artifact directory; ls -R $(Build.ArtifactStagingDirectory)
+    
+    # Publish build artifacts to azure pipelines
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'kube-manifests'
+        publishLocation: 'Container'
